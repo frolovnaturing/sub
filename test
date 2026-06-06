@@ -1,0 +1,44 @@
+// ============================================
+// HAPP VPN Subscription — Cloudflare Worker
+// Деплоить на: dash.cloudflare.com → Workers
+// ============================================
+
+// ======= СПИСОК СЕРВЕРОВ =======
+// Добавляй/удаляй строки здесь при обновлении серверов
+const SERVERS = [
+  "vless://7578576f-72ed-400f-99d8-0950f8036ca8@ozon.superportret.ru:443?type=tcp&encryption=none&security=reality&pbk=ZOihzWaxTTS3SBohuM-ks7X2hAYn3Qm8PPpntW1IRy4&fp=edge&sni=www.yandex.ru&sid=b09cb1e30a3c700a&spx=/&flow=xtls-rprx-vision#🇫🇮 Serv 914385 · VLESS TCP · Reality · Yandex",
+  "vless://d75c75f8-b2c2-48be-bab9-7a6c97500c50@ozon.superportret.ru:443?type=xhttp&encryption=none&security=reality&pbk=4udkSsUjl2qh87kvUjLAue2UrQ-vh9jPTiJMxtE6VXY&fp=edge&sni=rutube.ru&sid=909f3c5e38493924&spx=/&path=/&mode=auto&host=#🇫🇮 Serv 914385 · VLESS XHTTP · Reality · Rutube",
+  "trojan://71a55e08-447c-4224-ad1e-489e5cc89b8f@ozon.superportret.ru:443?security=reality&type=tcp&sni=www.wildberries.ru&pbk=zyyokHi8lRwKAoeyAXEyJHLkvaEHWKfL6aVDKHgXvh8&fp=edge&sid=8856ca7f7777fa11&spx=/#🇫🇮 Serv 914385 · TROJAN TCP · Reality · Wildberries",
+  "vless://0d7796b8-9eeb-44c9-8705-3e50d6d2e8fc@ozon.superportret.ru:8443?type=tcp&encryption=none&security=reality&pbk=4Y7y6vbn0pk-cUsC3_YLQI-0iAKhGEO_GSAN_Yd_GHw&fp=edge&sni=www.hp.com&sid=a6f6345cdd1e4ec1&spx=/&flow=xtls-rprx-vision#🇫🇮 Serv 914385 · VLESS TCP · Reality · HP",
+  "trojan://f85b9a62-4186-4371-b9cd-b10a6c677af8@ozon.superportret.ru:8443?security=reality&type=xhttp&sni=www.microsoft.com&pbk=ToGCdoeV0f-AXzc6apMsXz0te_RS14ThZIqa3b4PMgI&fp=edge&sid=644d9fd5eea87998&spx=/#🇫🇮 Serv 914385 · TROJAN XHTTP · Reality · Microsoft",
+  "vless://4758faa5-4083-4768-94e7-2e3a6ad82c7f@ozon.superportret.ru:8443?type=xhttp&encryption=none&security=reality&pbk=7DdxH_SQmTToI26N4CHlC-Z0DnNCe8u_-IFBm4pT32w&fp=edge&sni=www.ozon.ru&sid=15a48eac50a61349&spx=/&path=/&mode=auto&host=#🇫🇮 Serv 914385 · VLESS XHTTP · Reality · Ozon",
+  "vless://c606eeaa-66c1-4d9a-9f85-357fddeffa0e@ozon.superportret.ru:443?type=tcp&encryption=none&security=tls&sni=ozon.superportret.ru&alpn=http/1.1&fp=edge#🇫🇮 Serv 914385 · VLESS TCP · TLS · Ozon",
+  "vless://fa9fda2c-f03a-4853-9937-6c24d85520d9@ozon.superportret.ru:8443?type=grpc&encryption=none&security=tls&sni=ozon.superportret.ru&alpn=h2,http/1.1&fp=edge&serviceName=ozon-superportret-ru&mode=gun&authority=ozon.superportret.ru#🇫🇮 Serv 914385 · VLESS gRPC · TLS · Ozon",
+  "vless://4eb6fd2a-1248-48f7-8145-d6ab6920adb4@ozon.superportret.ru:33458?type=grpc&encryption=none&security=tls&sni=ozon.superportret.ru&alpn=h2,http/1.1&fp=edge&serviceName=ozon-superportret-ru&mode=gun&authority=ozon.superportret.ru#🇫🇮 Serv 914385 · VLESS gRPC · TLS · Ozon",
+  "vmess://eyJ2IjoiMiIsInBzIjoi8J+Hq/Cfh64gU2VydiA5MTQzODUgwrcgVk1FU1MgWEhUVFAgwrcgVExTIMK3IE96b24iLCJhZGQiOiJvem9uLnN1cGVycG9ydHJldC5ydSIsInBvcnQiOiIyNTU0MyIsImlkIjoiZTRmOTM1NzEtZTU0MS00NDMyLWJhZGYtOTBmMGRmZjA0NzA2IiwiYWlkIjoiMCIsInNjeSI6ImF1dG8iLCJuZXQiOiJ4aHR0cCIsInR5cGUiOiJub25lIiwidGxzIjoidGxzIiwic25pIjoib3pvbi5zdXBlcnBvcnRyZXQucnUiLCJhbHBuIjoiaHR0cC8xLjEiLCJmcCI6ImVkZ2UiLCJwYXRoIjoiLyJ9",
+  "trojan://3165dbaf-3660-4779-a9e4-67ac721b15f1@ozon.superportret.ru:29641?security=tls&type=ws&sni=ozon.superportret.ru&alpn=http/1.1&fp=edge&path=/ozon-superportret-ru-ws#🇫🇮 Serv 914385 · TROJAN WS · TLS · Ozon",
+  "trojan://40bc4aa5-5e17-4823-9a4c-d80ec4237fa2@ozon.superportret.ru:30435?security=reality&type=tcp&sni=www.google.com&pbk=_XtmWLUPJUZ0EAR_MlUL5JXjADTaG_IRKRUbaBKOBjg&fp=edge&sid=d2757f473866a40c&spx=/#🇫🇮 Serv 914385 · TROJAN TCP · Reality · Google"
+];
+// ======= КОНЕЦ СПИСКА =======
+
+export default {
+  async fetch(request) {
+    // Кодируем список в base64 (UTF-8 safe)
+    const plain = SERVERS.join("\n");
+    const encoded = btoa(unescape(encodeURIComponent(plain)));
+
+    return new Response(encoded, {
+      status: 200,
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Cache-Control": "no-cache",
+        // CORS — на случай если Tilda будет читать напрямую
+        "Access-Control-Allow-Origin": "*",
+        // Заголовок для совместимости с разными клиентами
+        "Subscription-Userinfo": `upload=0; download=0; total=107374182400; expire=9999999999`,
+        "Profile-Update-Interval": "24",
+        "Content-Disposition": "attachment; filename=subscription.txt",
+      },
+    });
+  },
+};
